@@ -7,8 +7,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/sender" element={<Sender />} />
-        <Route path="/receiver" element={<Receiver />} />
+        <Route path="/sender" element={<Sender />}></Route>
+        <Route path="/receiver" element={<Receiver />}></Route>
       </Routes>
     </BrowserRouter>
   );
