@@ -31,9 +31,9 @@ export const Sender = () => {
       }
     };
 
-    const pc = new RTCPeerConnection();
-    setPC(pc);
-    pc.onicecandidate = (event) => {
+    const peerConnection = new RTCPeerConnection();
+    setPC(peerConnection);
+    pc.onicecandidate = (event: any) => {
       if (event.candidate) {
         socket?.send(
           JSON.stringify({
@@ -71,8 +71,8 @@ export const Sender = () => {
           pc?.addTrack(track, stream);
         });
       })
-      .catch((e) => {
-        console.error("sad");
+      .catch((err) => {
+        console.error(err);
       });
   };
 
