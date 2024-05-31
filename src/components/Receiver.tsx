@@ -6,6 +6,7 @@ export const Receiver = () => {
   useEffect(() => {
     const socket = new WebSocket(import.meta.env.VITE_BACKEND_URL);
     socket.onopen = () => {
+      console.log("WebSocket connected");
       socket.send(JSON.stringify({ type: "receiver" }));
     };
     startReceiving(socket);
@@ -25,7 +26,7 @@ export const Receiver = () => {
 
     pc.ontrack = (event) => {
       if (videoRef.current) {
-        videoRef.current.srcObject = new MediaStream([event.track]);
+        videoRef.current.srcObject = event.streams[0];
       }
     };
 
@@ -54,6 +55,8 @@ export const Receiver = () => {
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
+      console.log("Received message:", message);
+
       if (message.type === "createOffer") {
         pc.setRemoteDescription(message.sdp).then(() => {
           pc.createAnswer().then((answer) => {
