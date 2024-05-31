@@ -21,6 +21,8 @@ export const Sender = () => {
       alert("Socket not found");
       return;
     }
+    const peerConnection = new RTCPeerConnection();
+    setPC(peerConnection);
 
     socket.onmessage = async (event) => {
       const message = JSON.parse(event.data);
@@ -31,8 +33,6 @@ export const Sender = () => {
       }
     };
 
-    const peerConnection = new RTCPeerConnection();
-    setPC(peerConnection);
     pc.onicecandidate = (event: any) => {
       if (event.candidate) {
         socket?.send(
@@ -55,25 +55,18 @@ export const Sender = () => {
       );
     };
 
-    getCameraStreamAndSend(pc);
+    getCameraStreamAndSend();
   };
 
-  const getCameraStreamAndSend = (pc: RTCPeerConnection) => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
-        const video = document.createElement("video");
-        video.srcObject = stream;
-        video.play();
-        // this is wrong, should propogate via a component
-        document.body.appendChild(video);
-        stream.getTracks().forEach((track) => {
-          pc?.addTrack(track, stream);
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+  const getCameraStreamAndSend = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.play();
+    document.body.appendChild(video);
+    stream.getTracks().forEach((track) => {
+      pc.addTrack(track, stream);
+    });
   };
 
   return (

@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export const Receiver = () => {
-  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
-    null
-  );
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const socket = new WebSocket(import.meta.env.VITE_BACKEND_URL);
@@ -18,13 +16,10 @@ export const Receiver = () => {
   }, []);
 
   function startReceiving(socket: WebSocket) {
-    const video = document.createElement("video");
-    setVideoElement(video);
-    document.body.appendChild(video);
-
     const pc = new RTCPeerConnection();
     pc.ontrack = (event) => {
-      video.srcObject = new MediaStream([event.track]);
+      if (videoRef.current)
+        videoRef.current.srcObject = new MediaStream([event.track]);
     };
 
     socket.onmessage = (event) => {
@@ -48,8 +43,8 @@ export const Receiver = () => {
   }
 
   const handlePlayClick = () => {
-    if (videoElement) {
-      videoElement.play().catch((error) => {
+    if (videoRef.current) {
+      videoRef.current.play().catch((error) => {
         console.error("Error playing video:", error);
       });
     }
@@ -58,6 +53,7 @@ export const Receiver = () => {
   return (
     <div>
       <button onClick={handlePlayClick}>Play Video</button>
+      <video controls ref={videoRef} />
     </div>
   );
 };
