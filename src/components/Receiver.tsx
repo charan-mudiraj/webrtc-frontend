@@ -14,7 +14,15 @@ export const Receiver = () => {
   function startReceiving(socket: WebSocket) {
     const pc = new RTCPeerConnection({
       iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: [
+            "stun:stun1.l.google.com:19302",
+            "stun:stun2.l.google.com:19302",
+            "stun:stun.l.google.com:19302",
+            "stun:stun3.l.google.com:19302",
+            "stun:stun4.l.google.com:19302",
+          ],
+        },
         {
           urls: "turn:your.turn.server:3478",
           username: "username",
