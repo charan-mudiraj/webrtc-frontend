@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 export const Sender = () => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [pc, setPC] = useState<RTCPeerConnection | null>(null);
 
   useEffect(() => {
     const socket = new WebSocket(import.meta.env.VITE_BACKEND_URL);
@@ -29,7 +28,6 @@ export const Sender = () => {
         },
       ],
     });
-    setPC(peerConnection);
 
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
