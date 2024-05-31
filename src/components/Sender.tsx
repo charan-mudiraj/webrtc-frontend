@@ -7,7 +7,6 @@ export const Sender = () => {
     const socket = new WebSocket(import.meta.env.VITE_BACKEND_URL);
     setSocket(socket);
     socket.onopen = () => {
-      console.log("WebSocket connected");
       socket.send(JSON.stringify({ type: "sender" }));
     };
   }, []);
@@ -63,8 +62,6 @@ export const Sender = () => {
 
     socket.onmessage = async (event) => {
       const message = JSON.parse(event.data);
-      console.log("Received message:", message);
-
       if (message.type === "createAnswer") {
         await peerConnection.setRemoteDescription(message.sdp);
       } else if (message.type === "iceCandidate") {
