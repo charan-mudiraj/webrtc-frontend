@@ -2,17 +2,12 @@ import { useEffect, useState } from "react";
 
 export const Sender = () => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [pc, setPC] = useState<RTCPeerConnection | null>(null);
 
   useEffect(() => {
     const socket = new WebSocket(import.meta.env.VITE_BACKEND_URL);
     setSocket(socket);
     socket.onopen = () => {
-      socket.send(
-        JSON.stringify({
-          type: "sender",
-        })
-      );
+      socket.send(JSON.stringify({ type: "sender" }));
     };
   }, []);
 
@@ -21,53 +16,70 @@ export const Sender = () => {
       alert("Socket not found");
       return;
     }
+
     const peerConnection = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: "turn:your.turn.server:3478",
+          username: "username",
+          credential: "password",
+        },
+      ],
     });
-    setPC(peerConnection);
 
-    socket.onmessage = async (event) => {
-      const message = JSON.parse(event.data);
-      if (message.type === "createAnswer") {
-        await pc.setRemoteDescription(message.sdp);
-      } else if (message.type === "iceCandidate") {
-        pc.addIceCandidate(message.candidate);
-      }
-    };
-
-    pc.onicecandidate = (event: any) => {
+    peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        socket?.send(
-          JSON.stringify({
-            type: "iceCandidate",
-            candidate: event.candidate,
-          })
+        console.log("ICE candidate:", event.candidate);
+        socket.send(
+          JSON.stringify({ type: "iceCandidate", candidate: event.candidate })
         );
+      } else {
+        console.log("All ICE candidates have been sent");
       }
     };
 
-    pc.onnegotiationneeded = async () => {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socket?.send(
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", peerConnection.iceConnectionState);
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+      console.log("Connection state:", peerConnection.connectionState);
+    };
+
+    peerConnection.onnegotiationneeded = async () => {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      socket.send(
         JSON.stringify({
           type: "createOffer",
-          sdp: pc.localDescription,
+          sdp: peerConnection.localDescription,
         })
       );
     };
 
-    getCameraStreamAndSend();
+    getCameraStreamAndSend(peerConnection);
+
+    socket.onmessage = async (event) => {
+      const message = JSON.parse(event.data);
+      if (message.type === "createAnswer") {
+        await peerConnection.setRemoteDescription(message.sdp);
+      } else if (message.type === "iceCandidate") {
+        peerConnection.addIceCandidate(message.candidate).catch((e) => {
+          console.error("Error adding received ice candidate", e);
+        });
+      }
+    };
   };
 
-  const getCameraStreamAndSend = async () => {
+  const getCameraStreamAndSend = async (peerConnection) => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     const video = document.createElement("video");
     video.srcObject = stream;
     video.play();
     document.body.appendChild(video);
     stream.getTracks().forEach((track) => {
-      pc.addTrack(track, stream);
+      peerConnection.addTrack(track, stream);
     });
   };
 

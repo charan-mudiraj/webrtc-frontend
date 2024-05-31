@@ -6,22 +6,50 @@ export const Receiver = () => {
   useEffect(() => {
     const socket = new WebSocket(import.meta.env.VITE_BACKEND_URL);
     socket.onopen = () => {
-      socket.send(
-        JSON.stringify({
-          type: "receiver",
-        })
-      );
+      socket.send(JSON.stringify({ type: "receiver" }));
     };
     startReceiving(socket);
   }, []);
 
   function startReceiving(socket: WebSocket) {
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: "turn:your.turn.server:3478",
+          username: "username",
+          credential: "password",
+        },
+      ],
     });
+
     pc.ontrack = (event) => {
-      if (videoRef.current)
+      if (videoRef.current) {
         videoRef.current.srcObject = new MediaStream([event.track]);
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", pc.iceConnectionState);
+    };
+
+    pc.onconnectionstatechange = () => {
+      console.log("Connection state:", pc.connectionState);
+    };
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log("ICE candidate:", event.candidate);
+        socket.send(
+          JSON.stringify({ type: "iceCandidate", candidate: event.candidate })
+        );
+      } else {
+        console.log("All ICE candidates have been sent");
+      }
+    };
+
+    pc.onicegatheringstatechange = () => {
+      console.log("ICE gathering state:", pc.iceGatheringState);
     };
 
     socket.onmessage = (event) => {
@@ -30,16 +58,13 @@ export const Receiver = () => {
         pc.setRemoteDescription(message.sdp).then(() => {
           pc.createAnswer().then((answer) => {
             pc.setLocalDescription(answer);
-            socket.send(
-              JSON.stringify({
-                type: "createAnswer",
-                sdp: answer,
-              })
-            );
+            socket.send(JSON.stringify({ type: "createAnswer", sdp: answer }));
           });
         });
       } else if (message.type === "iceCandidate") {
-        pc.addIceCandidate(message.candidate);
+        pc.addIceCandidate(message.candidate).catch((e) => {
+          console.error("Error adding received ice candidate", e);
+        });
       }
     };
   }
