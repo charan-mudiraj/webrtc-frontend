@@ -16,7 +16,9 @@ export const Receiver = () => {
   }, []);
 
   function startReceiving(socket: WebSocket) {
-    const pc = new RTCPeerConnection();
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
     pc.ontrack = (event) => {
       if (videoRef.current)
         videoRef.current.srcObject = new MediaStream([event.track]);

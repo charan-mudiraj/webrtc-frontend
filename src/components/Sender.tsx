@@ -21,7 +21,9 @@ export const Sender = () => {
       alert("Socket not found");
       return;
     }
-    const peerConnection = new RTCPeerConnection();
+    const peerConnection = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    });
     setPC(peerConnection);
 
     socket.onmessage = async (event) => {
